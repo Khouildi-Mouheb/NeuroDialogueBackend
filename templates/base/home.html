@@ -1,0 +1,293 @@
+<!-- templates/home.html -->
+{% extends 'base/base.html' %}
+
+{% block title %}EmotionAid - AI Emotional Intelligence Coach{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="AI-powered emotional intelligence chatbot using positive psychology and Agentic RAG technology for personalized, strength-based coaching.">
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative py-20 px-4 text-center bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl mb-16">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+    <div class="absolute bottom-0 left-0 w-64 h-64 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+    
+    <div class="relative z-10">
+        <h1 class="text-5xl md:text-6xl font-bold text-gray-800 mb-6">
+            Meet <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">EmotionAid</span>
+        </h1>
+        <p class="text-2xl text-gray-600 mb-10 max-w-3xl mx-auto">
+            An intelligent chatbot that detects emotions, applies positive psychology, 
+            and offers personalized, strength-based coaching through Agentic RAG technology.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row justify-center gap-6 mb-16">
+            <a href="{% url 'new_chat' %}" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                <i class="fas fa-comments mr-3"></i>Start Your Session
+            </a>
+            <a href="#how-it-works" class="bg-white hover:bg-gray-50 text-gray-800 px-10 py-4 rounded-xl font-semibold text-lg transition duration-300 shadow-lg border border-gray-200">
+                <i class="fas fa-play-circle mr-3"></i>See How It Works
+            </a>
+        </div>
+        
+        <!-- Problem Statement -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg max-w-4xl mx-auto text-left">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
+                The Challenge We're Solving
+            </h2>
+            <p class="text-lg text-gray-700 italic border-l-4 border-blue-500 pl-4 py-2">
+                "How to design an intelligent chatbot capable of detecting user mood and emotional needs, 
+                leveraging knowledge from positive psychology, and providing personalized, non-directive, 
+                strength-oriented responses while ensuring coherence, safety, and quality through an agentic verification mechanism?"
+            </p>
+            <div class="mt-6 flex flex-wrap gap-2">
+                <span class="bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium">Appreciative Coaching</span>
+                <span class="bg-purple-100 text-purple-800 px-4 py-2 rounded-full text-sm font-medium">Agentic RAG</span>
+                <span class="bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-medium">Multi-agent AI</span>
+                <span class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full text-sm font-medium">Mood Detection</span>
+                <span class="bg-red-100 text-red-800 px-4 py-2 rounded-full text-sm font-medium">Emotion Analysis</span>
+                <span class="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full text-sm font-medium">Strength-based Dialogue</span>
+                <span class="bg-pink-100 text-pink-800 px-4 py-2 rounded-full text-sm font-medium">LLM Verification</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section id="how-it-works" class="py-16">
+    <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold text-gray-800 mb-4">Our Multi-Agent Architecture</h2>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            A sophisticated pipeline that combines emotional intelligence with cutting-edge AI verification
+        </p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Agent 1 -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 hover:border-blue-300 transition duration-300">
+            <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
+                <i class="fas fa-heartbeat text-3xl text-blue-600"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">1. Emotion Detection Agent</h3>
+            <p class="text-gray-600 mb-4">
+                Real-time analysis of user's emotional state through:
+            </p>
+            <ul class="space-y-2 text-gray-700">
+                <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-2"></i> Text sentiment analysis</li>
+                <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-2"></i> Mood pattern recognition</li>
+                <li class="fas fa-check-circle text-green-500 mr-2"></i> Emotional need assessment</li>
+            </ul>
+        </div>
+        
+        <!-- Agent 2 -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg border border-purple-100 hover:border-purple-300 transition duration-300">
+            <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-6">
+                <i class="fas fa-brain text-3xl text-purple-600"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">2. Response Generation Agent</h3>
+            <p class="text-gray-600 mb-4">
+                Creates personalized coaching using:
+            </p>
+            <ul class="space-y-2 text-gray-700">
+                <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-2"></i> Positive psychology principles</li>
+                <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-2"></i> Strength-based approaches</li>
+                <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-2"></i> Non-directive coaching techniques</li>
+            </ul>
+        </div>
+        
+        <!-- Agent 3 -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg border border-green-100 hover:border-green-300 transition duration-300">
+            <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-6">
+                <i class="fas fa-shield-alt text-3xl text-green-600"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">3. Verification Agent</h3>
+            <p class="text-gray-600 mb-4">
+                Ensures quality and safety through:
+            </p>
+            <ul class="space-y-2 text-gray-700">
+                <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-2"></i> Agentic RAG verification</li>
+                <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-2"></i> Ethical constraint checking</li>
+                <li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-2"></i> Response coherence validation</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-16 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl mb-16">
+    <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold text-gray-800 mb-4">Core Features & Technology</h2>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            Integrating cutting-edge AI with evidence-based psychological approaches
+        </p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Feature 1 -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg">
+            <div class="flex items-start mb-4">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-database text-3xl text-blue-500"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Agentic RAG System</h3>
+                    <p class="text-gray-600">
+                        Structured knowledge base combining positive psychology research, 
+                        appreciative inquiry frameworks, and evidence-based coaching methodologies.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Feature 2 -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg">
+            <div class="flex items-start mb-4">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-user-friends text-3xl text-purple-500"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Multi-Agent Collaboration</h3>
+                    <p class="text-gray-600">
+                        Three specialized AI agents working in harmony to detect, respond, 
+                        and verify while maintaining emotional sensitivity and ethical standards.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Feature 3 -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg">
+            <div class="flex items-start mb-4">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-balance-scale text-3xl text-green-500"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Ethical Safeguards</h3>
+                    <p class="text-gray-600">
+                        Built-in ethical constraints, boundary recognition, and escalation protocols 
+                        for situations requiring human intervention.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Feature 4 -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg">
+            <div class="flex items-start mb-4">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-chart-line text-3xl text-yellow-500"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Progress Tracking</h3>
+                    <p class="text-gray-600">
+                        Visual feedback on emotional patterns, strength development, and 
+                        growth milestones with privacy-preserving analytics.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Use Cases -->
+<section class="py-16">
+    <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold text-gray-800 mb-4">Who Can Benefit</h2>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            Designed for various contexts requiring emotional intelligence support
+        </p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="text-center p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+            <i class="fas fa-user-graduate text-4xl text-blue-500 mb-4"></i>
+            <h4 class="font-bold text-gray-800 mb-2">Students</h4>
+            <p class="text-gray-600 text-sm">Stress management & academic resilience</p>
+        </div>
+        
+        <div class="text-center p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+            <i class="fas fa-briefcase text-4xl text-purple-500 mb-4"></i>
+            <h4 class="font-bold text-gray-800 mb-2">Professionals</h4>
+            <p class="text-gray-600 text-sm">Workplace wellbeing & leadership development</p>
+        </div>
+        
+        <div class="text-center p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+            <i class="fas fa-hands-helping text-4xl text-green-500 mb-4"></i>
+            <h4 class="font-bold text-gray-800 mb-2">Coaches</h4>
+            <p class="text-gray-600 text-sm">Tool augmentation & session preparation</p>
+        </div>
+        
+        <div class="text-center p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition duration-300">
+            <i class="fas fa-heart text-4xl text-red-500 mb-4"></i>
+            <h4 class="font-bold text-gray-800 mb-2">Everyone</h4>
+            <p class="text-gray-600 text-sm">Personal growth & emotional awareness</p>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonial/Quote -->
+<section class="py-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl text-white">
+    <div class="max-w-4xl mx-auto text-center">
+        <i class="fas fa-quote-left text-4xl mb-6 opacity-50"></i>
+        <p class="text-2xl italic mb-8">
+            "The future of emotional support lies not in replacing human connection, 
+            but in augmenting it with intelligent systems that understand nuance, 
+            respect boundaries, and amplify our inherent strengths."
+        </p>
+        <div class="flex items-center justify-center">
+            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-robot text-blue-600 text-xl"></i>
+            </div>
+            <div class="text-left">
+                <p class="font-bold">AI Ethics Committee</p>
+                <p class="text-blue-200">EmotionAid Development Team</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-20 text-center">
+    <div class="max-w-3xl mx-auto">
+        <h2 class="text-4xl font-bold text-gray-800 mb-6">Ready to Experience AI-Powered Emotional Coaching?</h2>
+        <p class="text-xl text-gray-600 mb-10">
+            Join our community of users discovering strength-based growth through intelligent conversation.
+        </p>
+        <div class="flex flex-col sm:flex-row justify-center gap-6">
+            <a href="#" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                <i class="fas fa-user-plus mr-3"></i>Start Free Trial
+            </a>
+            <a href="#" class="bg-white hover:bg-gray-50 text-gray-800 px-10 py-4 rounded-xl font-semibold text-lg transition duration-300 shadow-lg border border-gray-200 hover:border-gray-300">
+                <i class="fas fa-book-open mr-3"></i>Learn About Our Research
+            </a>
+        </div>
+        <p class="text-gray-500 mt-6 text-sm">
+            <i class="fas fa-shield-alt mr-2"></i>
+            All conversations are encrypted and private. We never share your data.
+        </p>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    @keyframes blob {
+        0% { transform: translate(0px, 0px) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+        100% { transform: translate(0px, 0px) scale(1); }
+    }
+    .animate-blob {
+        animation: blob 7s infinite;
+    }
+    .animation-delay-2000 {
+        animation-delay: 2s;
+    }
+    .animation-delay-4000 {
+        animation-delay: 4s;
+    }
+</style>
+{% endblock %}

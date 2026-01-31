@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Profile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+        }
+        .profile-card {
+            width: 400px;
+            margin: 50px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .profile-card img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 15px;
+        }
+        .profile-card h2 {
+            margin: 10px 0;
+        }
+        .profile-info {
+            text-align: left;
+            margin-top: 20px;
+        }
+        .profile-info p {
+            margin: 8px 0;
+        }
+        .label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="profile-card">
+
+    {% if user.image %}
+        <img src="{{ user.image.url }}" alt="Profile Image">
+    {% else %}
+        <img src="https://via.placeholder.com/120" alt="Default Image">
+    {% endif %}
+
+    <h2>{{ user.firstName }} {{ user.lastName }}</h2>
+    <p>{{ user.email }}</p>
+
+    <div class="profile-info">
+        <p><span class="label">User ID:</span> {{ user.id }}</p>
+        <p><span class="label">Joined:</span> {{ user.dateJoined|date:"F d, Y" }}</p>
+        <p><span class="label">Active:</span> {{ user.is_active }}</p>
+        <p><span class="label">Staff:</span> {{ user.is_staff }}</p>
+    </div>
+
+</div>
+
+</body>
+</html>
