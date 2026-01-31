@@ -35,10 +35,9 @@ SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE") == "True"
 CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE") == "True"
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://web-production-d3c7e.up.railway.app",
+    'https://neurodialoguebackend-production.up.railway.app',
     'https://*.railway.app',
 ]
-
 
 # Application definition
 
