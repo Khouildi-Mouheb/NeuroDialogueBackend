@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import home,CustomLoginView , CustomLogoutView , profile, register
+from .views import home,CustomLoginView , CustomLogoutView , profile, register , oops_page
 
 
 urlpatterns=[
@@ -10,6 +10,7 @@ urlpatterns=[
     path('users/login/',CustomLoginView.as_view(),name='login'),
     path('users/login/',CustomLoginView.as_view(),name='login'),
     path('users/profile/<str:user_id>/',profile,name='profile'),
+    path('oops/', oops_page, name='oops_page'),
     
 ]
 
