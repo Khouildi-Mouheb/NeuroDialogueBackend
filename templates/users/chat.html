@@ -1,90 +1,669 @@
 {% extends 'base/base.html' %}
 
-{% block title %}Chat - EmotionAid{% endblock %}
+{% block title %}Conversation - EmotionAid{% endblock %}
+
+{% block hide_footer %}hidden{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
-    <!-- Chat Header -->
-    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">Emotional Intelligence Chat</h1>
-        <p class="text-gray-600">Speak with our AI coach about your feelings and thoughts</p>
-    </div>
+<div class="flex h-screen bg-gradient-to-br from-slate-50 via-indigo-50/20 to-cyan-50/20 overflow-hidden">
+    <!-- Desktop Sidebar Toggle Button -->
+    <button id="desktop-sidebar-toggle" class="hidden md:flex fixed left-4 top-4 z-30 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-md border border-indigo-200 hover:shadow-lg transition-all duration-200 hover:bg-white hover:border-indigo-300">
+        <svg id="sidebar-toggle-icon" class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+        </svg>
+    </button>
 
-    <!-- Chat Container -->
-    <div class="bg-white rounded-xl shadow-lg p-6">
-        <!-- Messages Area -->
-        <div id="messages" class="messages h-96 border border-gray-200 rounded-lg p-4 mb-4 overflow-y-auto bg-gray-50">
-            <!-- Messages will appear here -->
+    <!-- Sidebar - Conversation History -->
+    <aside id="desktop-sidebar" class="hidden md:flex flex-col w-80 border-r border-indigo-100 bg-white/80 backdrop-blur-md transition-all duration-300 transform shadow-sm">
+        <!-- Sidebar Header -->
+        <div class="p-6 border-b border-indigo-100 flex-shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-md">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="font-semibold text-gray-800">Conversations</h2>
+                    <p class="text-xs text-gray-500">{{ request.user.firstName }}</p>
+                </div>
+            </div>
         </div>
 
-        <!-- Input Form -->
-        <form id="chat-form" class="flex gap-3">
-            <input 
-                type="text" 
-                id="text" 
-                name="text" 
-                placeholder="Type your message here..." 
-                required
-                class="flex-grow px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-            <button 
-                type="submit"
-                class="bg-primary hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition duration-300"
-            >
-                Send
+        <!-- New Chat Button -->
+        <div class="p-4 border-b border-indigo-100 flex-shrink-0">
+            <a href="{% url 'new_chat' %}" 
+               class="w-full bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white px-4 py-3 rounded-xl font-medium transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center group">
+                <svg class="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                New conversation
+            </a>
+        </div>
+
+        <!-- Conversation List Header with Toggle -->
+        <div class="px-4 py-2 border-b border-indigo-100 flex-shrink-0">
+            <button id="toggle-history" class="w-full flex items-center justify-between text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors">
+                <span class="flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Recent Conversations
+                </span>
+                <svg id="history-chevron" class="w-4 h-4 text-indigo-500 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
             </button>
-        </form>
+        </div>
+
+        <!-- Conversation List -->
+        <div id="conversation-history" class="overflow-y-auto transition-all duration-300" style="max-height: 300px;">
+            <div class="p-2">
+                {% for other_chat in request.user.chat_set.all|slice:":20" %}
+                <a href="{% url 'chat_page' chat_id=other_chat.id %}" 
+                   class="block p-3 rounded-xl mb-1 transition-all duration-200 {% if other_chat.id == chat.id %}bg-indigo-50 border border-indigo-200{% else %}hover:bg-indigo-50/50{% endif %}">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 mt-1">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center {% if other_chat.id == chat.id %}bg-indigo-100 text-indigo-600{% else %}bg-gray-100 text-gray-500{% endif %}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-800 truncate">
+                                {% with first_message=other_chat.prompt_set.first %}
+                                    {% if first_message %}
+                                        {% if first_message.content|length > 50 %}
+                                            "{{ first_message.content|slice:":50" }}..."
+                                        {% else %}
+                                            "{{ first_message.content }}"
+                                        {% endif %}
+                                    {% else %}
+                                        A reflective moment
+                                    {% endif %}
+                                {% endwith %}
+                            </p>
+                            <p class="text-xs text-gray-500 mt-0.5">
+                                {% if other_chat.prompt_set.count == 1 %}
+                                    1 exchange
+                                {% else %}
+                                    {{ other_chat.prompt_set.count }} exchanges
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="p-4 text-center">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-indigo-100 flex items-center justify-center mb-3">
+                        <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-sm text-gray-600">No conversations yet</p>
+                    <p class="text-xs text-gray-500 mt-1">Start by sharing what's on your mind</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Spacer -->
+        <div class="flex-1"></div>
+
+        <!-- User Profile -->
+        <div class="p-4 border-t border-indigo-100 flex-shrink-0">
+            <div class="flex items-center space-x-3">
+                {% if request.user.image %}
+                <img src="{{ request.user.image.url }}" alt="{{ request.user.firstName }}" class="w-8 h-8 rounded-full object-cover">
+                {% else %}
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center">
+                    <span class="text-sm font-medium text-white">{{ request.user.firstName|first }}{{ request.user.lastName|first }}</span>
+                </div>
+                {% endif %}
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-800">{{ request.user.firstName }}</p>
+                    <p class="text-xs text-gray-500">Here to listen</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Mobile Header - Appears on scroll up -->
+    <div id="mobile-header" class="md:hidden fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-indigo-100 z-20 transform -translate-y-full transition-transform duration-300">
+        <div class="flex items-center justify-between p-4">
+            <div class="flex items-center space-x-3">
+                <button id="mobile-sidebar-toggle" class="p-2 rounded-lg hover:bg-indigo-50 transition-colors">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <div>
+                    <h1 class="font-semibold text-gray-800">EmotionAid</h1>
+                    <p class="text-xs text-gray-500">Your safe space</p>
+                </div>
+            </div>
+            <a href="{% url 'new_chat' %}" class="p-2 rounded-lg hover:bg-indigo-50 transition-colors">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Chat Area - Full Screen -->
+    <main id="main-chat" class="flex-1 flex flex-col h-screen transition-all duration-300 relative">
+        <!-- Messages Container - Takes full available height minus fixed input -->
+        <div id="messages-scroll-container" class="flex-1 overflow-y-auto pb-4">
+            <div id="messages-wrapper" class="min-h-full flex flex-col">
+                <!-- Spacer to push content to bottom initially -->
+                <div class="flex-1"></div>
+                
+                <!-- Messages Container -->
+                <div id="messages-container" class="w-full max-w-3xl mx-auto px-4 py-6 space-y-6">
+                    <!-- Welcome Message -->
+                    <div class="flex items-start space-x-3 animate-fade-in">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-md">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-white/90 backdrop-blur-sm rounded-2xl rounded-tl-none p-5 shadow-md border border-indigo-100 max-w-2xl">
+                                <p class="text-gray-800 leading-relaxed">
+                                    Hello, I'm here to listen. Whatever you'd like to share — big or small, clear or confusing — 
+                                    I'm here with a caring space for you to explore it. Take your time, there's no rush.
+                                </p>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2 ml-1 flex items-center">
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></span>
+                                Listening • Just now
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Existing Conversation -->
+                    {% for item in conversation %}
+                    {% if item.prompt %}
+                    <!-- User Message -->
+                    <div class="flex items-start justify-end space-x-3 animate-fade-in">
+                        <div class="flex-1 max-w-2xl">
+                            <div class="bg-gradient-to-r from-indigo-600 to-cyan-600 text-white rounded-2xl rounded-tr-none p-5 shadow-md ml-auto">
+                                <p class="leading-relaxed">{{ item.prompt.content }}</p>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2 text-right mr-1">You • {{ item.prompt.created_at|timesince }} ago</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center shadow-md">
+                                <span class="text-sm font-medium text-white">{{ request.user.firstName|first }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bot Response -->
+                    {% if item.response %}
+                    <div class="flex items-start space-x-3 animate-fade-in">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-md">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-white/90 backdrop-blur-sm rounded-2xl rounded-tl-none p-5 shadow-md border border-indigo-100 max-w-2xl">
+                                <p class="text-gray-800 leading-relaxed whitespace-pre-wrap">{{ item.response.content }}</p>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2 ml-1 flex items-center">
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></span>
+                                Listening • {{ item.response.created_at|timesince }} ago
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Fixed Input Area at Bottom - ALWAYS VISIBLE -->
+        <div id="input-container" class="sticky bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent backdrop-blur-sm border-t border-indigo-100 z-10">
+            <div class="w-full max-w-3xl mx-auto px-4 py-4 md:py-6">
+                <form id="chat-form" class="relative">
+                    <div class="flex items-end space-x-3 bg-white rounded-2xl shadow-xl border-2 border-indigo-200 p-2 transition-all duration-200 focus-within:shadow-2xl focus-within:border-indigo-400">
+                        <div class="flex-1">
+                            <textarea 
+                                id="text" 
+                                name="text" 
+                                rows="1"
+                                placeholder="Share what's on your mind..."
+                                required
+                                class="w-full px-4 py-3 focus:outline-none resize-none bg-transparent text-gray-800 placeholder-gray-400 font-medium"
+                                oninput="autoResize(this)"
+                            ></textarea>
+                        </div>
+                        <button 
+                            type="submit"
+                            id="send-button"
+                            class="flex-shrink-0 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white p-3.5 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="Send message"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2 text-center">
+                        Press <kbd class="px-1.5 py-0.5 bg-gray-100 rounded text-xs">Enter</kbd> to send • <kbd class="px-1.5 py-0.5 bg-gray-100 rounded text-xs">Shift+Enter</kbd> for new line
+                    </p>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="mobile-sidebar-overlay" class="md:hidden fixed inset-0 z-30 hidden">
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="toggleMobileSidebar()"></div>
+        <div id="mobile-sidebar-content" class="absolute left-0 top-0 bottom-0 w-80 bg-white transform -translate-x-full transition-transform duration-300 shadow-2xl">
+            <div class="h-full flex flex-col">
+                <!-- Mobile Sidebar Header -->
+                <div class="p-6 border-b border-indigo-100 flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-md">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="font-semibold text-gray-800">Conversations</h2>
+                                <p class="text-xs text-gray-500">{{ request.user.firstName }}</p>
+                            </div>
+                        </div>
+                        <button onclick="toggleMobileSidebar()" class="p-2 rounded-lg hover:bg-indigo-50 transition-colors">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- New Chat Button -->
+                <div class="p-4 border-b border-indigo-100 flex-shrink-0">
+                    <a href="{% url 'new_chat' %}" 
+                       class="w-full bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white px-4 py-3 rounded-xl font-medium transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center group">
+                        <svg class="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        New conversation
+                    </a>
+                </div>
+
+                <!-- Conversation List Header with Toggle -->
+                <div class="px-4 py-2 border-b border-indigo-100 flex-shrink-0">
+                    <button id="toggle-history-mobile" class="w-full flex items-center justify-between text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors">
+                        <span class="flex items-center">
+                            <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Recent Conversations
+                        </span>
+                        <svg id="history-chevron-mobile" class="w-4 h-4 text-indigo-500 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Conversation List -->
+                <div id="conversation-history-mobile" class="overflow-y-auto transition-all duration-300" style="max-height: 300px;">
+                    <div class="p-2">
+                    {% for other_chat in request.user.chat_set.all|slice:":20" %}
+                    <a href="{% url 'chat_page' chat_id=other_chat.id %}" 
+                       class="block p-3 rounded-xl mb-1 transition-all duration-200 {% if other_chat.id == chat.id %}bg-indigo-50 border border-indigo-200{% else %}hover:bg-indigo-50/50{% endif %}"
+                       onclick="toggleMobileSidebar()">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0 mt-1">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center {% if other_chat.id == chat.id %}bg-indigo-100 text-indigo-600{% else %}bg-gray-100 text-gray-500{% endif %}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-800 truncate">
+                                    {% with first_message=other_chat.prompt_set.first %}
+                                        {% if first_message %}
+                                            {% if first_message.content|length > 50 %}
+                                                "{{ first_message.content|slice:":50" }}..."
+                                            {% else %}
+                                                "{{ first_message.content }}"
+                                            {% endif %}
+                                        {% else %}
+                                            A reflective moment
+                                        {% endif %}
+                                    {% endwith %}
+                                </p>
+                                <p class="text-xs text-gray-500 mt-0.5">
+                                    {% if other_chat.prompt_set.count == 1 %}
+                                        1 exchange
+                                    {% else %}
+                                        {{ other_chat.prompt_set.count }} exchanges
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="p-4 text-center">
+                        <div class="w-12 h-12 mx-auto rounded-full bg-indigo-100 flex items-center justify-center mb-3">
+                            <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-sm text-gray-600">No conversations yet</p>
+                        <p class="text-xs text-gray-500 mt-1">Start by sharing what's on your mind</p>
+                    </div>
+                    {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Spacer -->
+                <div class="flex-1"></div>
+
+                <!-- User Profile -->
+                <div class="p-4 border-t border-indigo-100 flex-shrink-0">
+                    <div class="flex items-center space-x-3">
+                        {% if request.user.image %}
+                        <img src="{{ request.user.image.url }}" alt="{{ request.user.firstName }}" class="w-8 h-8 rounded-full object-cover">
+                        {% else %}
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center">
+                            <span class="text-sm font-medium text-white">{{ request.user.firstName|first }}{{ request.user.lastName|first }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-800">{{ request.user.firstName }}</p>
+                            <p class="text-xs text-gray-500">Here to listen</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-const form = document.getElementById("chat-form");
-const messages = document.getElementById("messages");
+// ==========================================
+// STATE MANAGEMENT
+// ==========================================
+let isSidebarOpen = true;
+let lastScrollTop = 0;
+let isAutoScrolling = false;
 
-// Auto-scroll to bottom
-function scrollToBottom() {
-    messages.scrollTop = messages.scrollHeight;
+// Load sidebar preference
+const sidebarState = localStorage.getItem('sidebarState');
+if (sidebarState === 'closed') {
+    isSidebarOpen = false;
 }
 
-form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+// ==========================================
+// DOM ELEMENTS
+// ==========================================
+const desktopSidebar = document.getElementById('desktop-sidebar');
+const desktopToggleBtn = document.getElementById('desktop-sidebar-toggle');
+const desktopToggleIcon = document.getElementById('sidebar-toggle-icon');
+const mainChat = document.getElementById('main-chat');
+const mobileSidebarOverlay = document.getElementById('mobile-sidebar-overlay');
+const mobileSidebarContent = document.getElementById('mobile-sidebar-content');
+const mobileToggleBtn = document.getElementById('mobile-sidebar-toggle');
+const mobileHeader = document.getElementById('mobile-header');
+const messagesContainer = document.getElementById('messages-container');
+const messagesScrollContainer = document.getElementById('messages-scroll-container');
+const textarea = document.getElementById('text');
+const form = document.getElementById('chat-form');
+const sendButton = document.getElementById('send-button');
 
-    const input = document.getElementById("text");
-    const text = input.value;
+// ==========================================
+// AUTO-RESIZE TEXTAREA
+// ==========================================
+function autoResize(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+}
 
-    // Create and append user message
-    const userMessage = document.createElement("div");
-    userMessage.className = "mb-4 text-right";
-    userMessage.innerHTML = `
-        <div class="inline-block bg-primary text-white rounded-lg rounded-tr-none px-4 py-2 max-w-xs">
-            ${text}
-        </div>
-        <div class="text-xs text-gray-500 mt-1">
-            <i class="fas fa-user mr-1"></i>You • Just now
-        </div>
-    `;
-    messages.appendChild(userMessage);
-    scrollToBottom();
+// ==========================================
+// SIDEBAR FUNCTIONS
+// ==========================================
+function initSidebar() {
+    if (!isSidebarOpen) {
+        desktopSidebar.classList.add('-translate-x-full');
+        desktopToggleIcon.innerHTML = `
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+        `;
+    } else {
+        desktopSidebar.classList.remove('-translate-x-full');
+        desktopToggleIcon.innerHTML = `
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+        `;
+    }
+}
 
-    // Clear input
-    input.value = "";
+function toggleDesktopSidebar() {
+    isSidebarOpen = !isSidebarOpen;
+    localStorage.setItem('sidebarState', isSidebarOpen ? 'open' : 'closed');
     
-    // Show typing indicator
-    const typingIndicator = document.createElement("div");
-    typingIndicator.className = "mb-4 text-left";
-    typingIndicator.innerHTML = `
-        <div class="inline-block bg-gray-200 text-gray-700 rounded-lg rounded-tl-none px-4 py-2">
-            <div class="typing-indicator">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
+    if (isSidebarOpen) {
+        desktopSidebar.classList.remove('-translate-x-full');
+        desktopToggleIcon.innerHTML = `
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+        `;
+    } else {
+        desktopSidebar.classList.add('-translate-x-full');
+        desktopToggleIcon.innerHTML = `
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+        `;
+    }
+}
+
+function toggleConversationHistory() {
+    const historyDiv = document.getElementById('conversation-history');
+    const chevron = document.getElementById('history-chevron');
+    
+    if (historyDiv.style.maxHeight === '0px') {
+        historyDiv.style.maxHeight = '300px';
+        chevron.style.transform = 'rotate(0deg)';
+    } else {
+        historyDiv.style.maxHeight = '0px';
+        chevron.style.transform = 'rotate(-90deg)';
+    }
+}
+
+function toggleConversationHistoryMobile() {
+    const historyDiv = document.getElementById('conversation-history-mobile');
+    const chevron = document.getElementById('history-chevron-mobile');
+    
+    if (historyDiv.style.maxHeight === '0px') {
+        historyDiv.style.maxHeight = '300px';
+        chevron.style.transform = 'rotate(0deg)';
+    } else {
+        historyDiv.style.maxHeight = '0px';
+        chevron.style.transform = 'rotate(-90deg)';
+    }
+}
+
+function toggleMobileSidebar() {
+    if (mobileSidebarOverlay.classList.contains('hidden')) {
+        mobileSidebarOverlay.classList.remove('hidden');
+        setTimeout(() => {
+            mobileSidebarContent.classList.remove('-translate-x-full');
+        }, 10);
+    } else {
+        mobileSidebarContent.classList.add('-translate-x-full');
+        setTimeout(() => {
+            mobileSidebarOverlay.classList.add('hidden');
+        }, 300);
+    }
+}
+
+// ==========================================
+// SCROLL FUNCTIONS
+// ==========================================
+function scrollToBottom(smooth = true) {
+    isAutoScrolling = true;
+    messagesScrollContainer.scrollTo({
+        top: messagesScrollContainer.scrollHeight,
+        behavior: smooth ? 'smooth' : 'auto'
+    });
+    
+    // Reset auto-scrolling flag after animation
+    setTimeout(() => {
+        isAutoScrolling = false;
+    }, smooth ? 500 : 0);
+}
+
+// Mobile header show/hide on scroll
+function handleScroll() {
+    if (isAutoScrolling) return; // Don't handle manual scroll during auto-scroll
+    
+    const scrollTop = messagesScrollContainer.scrollTop;
+    
+    // Show header when scrolling up, hide when scrolling down
+    if (scrollTop < lastScrollTop && scrollTop > 50) {
+        // Scrolling up - show header
+        mobileHeader.classList.remove('-translate-y-full');
+    } else if (scrollTop > lastScrollTop) {
+        // Scrolling down - hide header
+        mobileHeader.classList.add('-translate-y-full');
+    }
+    
+    lastScrollTop = scrollTop;
+}
+
+// ==========================================
+// MESSAGE CREATION FUNCTIONS
+// ==========================================
+function createUserMessage(text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'flex items-start justify-end space-x-3 animate-fade-in';
+    messageDiv.innerHTML = `
+        <div class="flex-1 max-w-2xl">
+            <div class="bg-gradient-to-r from-indigo-600 to-cyan-600 text-white rounded-2xl rounded-tr-none p-5 shadow-md ml-auto">
+                <p class="leading-relaxed">${escapeHtml(text)}</p>
+            </div>
+            <p class="text-xs text-gray-500 mt-2 text-right mr-1">You • Just now</p>
+        </div>
+        <div class="flex-shrink-0">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center shadow-md">
+                <span class="text-sm font-medium text-white">{{ request.user.firstName|first }}</span>
             </div>
         </div>
     `;
-    messages.appendChild(typingIndicator);
-    scrollToBottom();
+    return messageDiv;
+}
+
+function createBotMessage(text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'flex items-start space-x-3 animate-fade-in';
+    messageDiv.innerHTML = `
+        <div class="flex-shrink-0">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-md">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="flex-1">
+            <div class="bg-white/90 backdrop-blur-sm rounded-2xl rounded-tl-none p-5 shadow-md border border-indigo-100 max-w-2xl">
+                <p class="text-gray-800 leading-relaxed whitespace-pre-wrap">${escapeHtml(text)}</p>
+            </div>
+            <p class="text-xs text-gray-500 mt-2 ml-1 flex items-center">
+                <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></span>
+                Listening • Just now
+            </p>
+        </div>
+    `;
+    return messageDiv;
+}
+
+function createTypingIndicator() {
+    const indicatorDiv = document.createElement('div');
+    indicatorDiv.className = 'flex items-start space-x-3 animate-fade-in';
+    indicatorDiv.id = 'typing-indicator';
+    indicatorDiv.innerHTML = `
+        <div class="flex-shrink-0">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-md">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="flex-1">
+            <div class="bg-white/90 backdrop-blur-sm rounded-2xl rounded-tl-none p-5 shadow-md border border-indigo-100 max-w-2xl">
+                <div class="typing-indicator flex space-x-1.5">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    return indicatorDiv;
+}
+
+function createErrorMessage(errorText) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'flex justify-center py-4 animate-fade-in';
+    errorDiv.innerHTML = `
+        <div class="inline-flex items-center px-5 py-3 rounded-xl bg-red-50 text-red-700 text-sm font-medium shadow-sm border border-red-200">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            ${escapeHtml(errorText)}
+        </div>
+    `;
+    return errorDiv;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ==========================================
+// FORM SUBMISSION
+// ==========================================
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const text = textarea.value.trim();
+    if (!text) return;
+
+    // Disable input during submission
+    textarea.disabled = true;
+    sendButton.disabled = true;
+
+    // Create and append user message
+    const userMessage = createUserMessage(text);
+    messagesContainer.appendChild(userMessage);
+
+    // Clear textarea
+    textarea.value = '';
+    textarea.style.height = 'auto';
+
+    // AUTO-SCROLL to show new message
+    scrollToBottom(true);
+
+    // Show typing indicator
+    const typingIndicator = createTypingIndicator();
+    messagesContainer.appendChild(typingIndicator);
+    
+    // AUTO-SCROLL to show typing indicator
+    scrollToBottom(true);
 
     try {
         const response = await fetch(
@@ -94,90 +673,134 @@ form.addEventListener("submit", async (e) => {
         const data = await response.json();
 
         // Remove typing indicator
-        messages.removeChild(typingIndicator);
-
-        if (data.response) {
-            const botMessage = document.createElement("div");
-            botMessage.className = "mb-4 text-left";
-            botMessage.innerHTML = `
-                <div class="inline-block bg-gray-100 text-gray-800 rounded-lg rounded-tl-none px-4 py-2 max-w-xs">
-                    ${data.response}
-                </div>
-                <div class="text-xs text-gray-500 mt-1">
-                    <i class="fas fa-robot mr-1"></i>AI Coach • Just now
-                </div>
-            `;
-            messages.appendChild(botMessage);
-        } else if (data.error) {
-            const errorMessage = document.createElement("div");
-            errorMessage.className = "mb-4 text-center";
-            errorMessage.innerHTML = `
-                <div class="inline-block bg-red-100 text-red-700 rounded-lg px-4 py-2">
-                    <i class="fas fa-exclamation-circle mr-2"></i>${data.error}
-                </div>
-            `;
-            messages.appendChild(errorMessage);
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) {
+            messagesContainer.removeChild(indicator);
         }
 
-        scrollToBottom();
+        if (data.response) {
+            const botMessage = createBotMessage(data.response);
+            messagesContainer.appendChild(botMessage);
+        } else if (data.error) {
+            const errorMessage = createErrorMessage(data.error);
+            messagesContainer.appendChild(errorMessage);
+        }
+
+        // AUTO-SCROLL to show response
+        scrollToBottom(true);
 
     } catch (err) {
         // Remove typing indicator
-        messages.removeChild(typingIndicator);
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) {
+            messagesContainer.removeChild(indicator);
+        }
         
-        const errorMessage = document.createElement("div");
-        errorMessage.className = "mb-4 text-center";
-        errorMessage.innerHTML = `
-            <div class="inline-block bg-red-100 text-red-700 rounded-lg px-4 py-2">
-                <i class="fas fa-exclamation-triangle mr-2"></i>Network error. Please try again.
-            </div>
-        `;
-        messages.appendChild(errorMessage);
-        scrollToBottom();
+        const errorMessage = createErrorMessage('Network error. Please try again.');
+        messagesContainer.appendChild(errorMessage);
+        
+        // AUTO-SCROLL to show error
+        scrollToBottom(true);
+    } finally {
+        // Re-enable input
+        textarea.disabled = false;
+        sendButton.disabled = false;
+        textarea.focus();
     }
 });
 
-// Initial welcome message when page loads
-window.addEventListener('DOMContentLoaded', () => {
-    const welcomeMessage = document.createElement("div");
-    welcomeMessage.className = "mb-4 text-left";
-    welcomeMessage.innerHTML = `
-        <div class="inline-block bg-gray-100 text-gray-800 rounded-lg rounded-tl-none px-4 py-2 max-w-xs">
-            Hello! I'm here to listen and support you. How are you feeling today?
-        </div>
-        <div class="text-xs text-gray-500 mt-1">
-            <i class="fas fa-robot mr-1"></i>AI Coach • Just now
-        </div>
-    `;
-    messages.appendChild(welcomeMessage);
-    scrollToBottom();
-});
+// ==========================================
+// EVENT LISTENERS
+// ==========================================
+desktopToggleBtn.addEventListener('click', toggleDesktopSidebar);
+if (mobileToggleBtn) mobileToggleBtn.addEventListener('click', toggleMobileSidebar);
+messagesScrollContainer.addEventListener('scroll', handleScroll);
 
-// Allow Enter key to submit (but allow Shift+Enter for new line)
-document.getElementById('text').addEventListener('keydown', function(e) {
+// History toggle buttons
+const toggleHistoryBtn = document.getElementById('toggle-history');
+const toggleHistoryMobileBtn = document.getElementById('toggle-history-mobile');
+if (toggleHistoryBtn) {
+    toggleHistoryBtn.addEventListener('click', toggleConversationHistory);
+}
+if (toggleHistoryMobileBtn) {
+    toggleHistoryMobileBtn.addEventListener('click', toggleConversationHistoryMobile);
+}
+
+// Textarea Enter key handling
+textarea.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+        form.dispatchEvent(new Event('submit'));
     }
+});
+
+// Close mobile sidebar when clicking outside
+document.addEventListener('click', function(event) {
+    if (!mobileSidebarOverlay.classList.contains('hidden') && 
+        !mobileSidebarContent.contains(event.target) && 
+        mobileToggleBtn && !mobileToggleBtn.contains(event.target)) {
+        toggleMobileSidebar();
+    }
+});
+
+// ==========================================
+// INITIALIZATION
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize sidebar
+    initSidebar();
+    
+    // Store sidebar preference if not set
+    if (sidebarState === null) {
+        localStorage.setItem('sidebarState', 'open');
+    }
+    
+    // Auto-resize textarea
+    autoResize(textarea);
+    
+    // Scroll to bottom on page load
+    setTimeout(() => {
+        scrollToBottom(false);
+    }, 100);
+    
+    // Focus textarea
+    textarea.focus();
 });
 </script>
 
 <style>
-.messages {
-    white-space: pre-wrap;
-    word-wrap: break-word;
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* ==========================================
+   TYPING INDICATOR
+   ========================================== */
 .typing-indicator {
-    display: inline-flex;
+    display: flex;
     align-items: center;
+    height: 24px;
 }
 
 .typing-dot {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    background-color: #6b7280;
+    background-color: #6366f1;
     margin: 0 2px;
     animation: typing 1.4s infinite ease-in-out;
 }
@@ -186,8 +809,78 @@ document.getElementById('text').addEventListener('keydown', function(e) {
 .typing-dot:nth-child(2) { animation-delay: -0.16s; }
 
 @keyframes typing {
-    0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-6px); }
+    0%, 60%, 100% { 
+        transform: translateY(0); 
+        opacity: 0.4; 
+    }
+    30% { 
+        transform: translateY(-6px); 
+        opacity: 1; 
+    }
+}
+
+/* ==========================================
+   SCROLLBAR STYLING
+   ========================================== */
+#messages-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+#messages-scroll-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#messages-scroll-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #c7d2fe, #a5b4fc);
+    border-radius: 4px;
+}
+
+#messages-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #a5b4fc, #818cf8);
+}
+
+/* Firefox scrollbar */
+#messages-scroll-container {
+    scrollbar-width: thin;
+    scrollbar-color: #c7d2fe transparent;
+}
+
+/* ==========================================
+   SMOOTH SCROLLING
+   ========================================== */
+#messages-scroll-container {
+    scroll-behavior: smooth;
+}
+
+/* ==========================================
+   KBD STYLING
+   ========================================== */
+kbd {
+    font-family: ui-monospace, monospace;
+    font-weight: 500;
+}
+
+/* ==========================================
+   RESPONSIVE ADJUSTMENTS
+   ========================================== */
+@media (max-width: 768px) {
+    #messages-scroll-container {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    #input-container {
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
+}
+
+/* ==========================================
+   TRANSITIONS
+   ========================================== */
+#desktop-sidebar, 
+#main-chat,
+#mobile-sidebar-content,
+#mobile-header {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>
 {% endblock %}
