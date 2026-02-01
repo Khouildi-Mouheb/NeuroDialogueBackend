@@ -670,6 +670,11 @@ form.addEventListener('submit', async (e) => {
             `/chat/{{ chat.id }}/send/?text=${encodeURIComponent(text)}`
         );
 
+        // Check if the response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
 
         // Remove typing indicator
@@ -696,8 +701,22 @@ form.addEventListener('submit', async (e) => {
             messagesContainer.removeChild(indicator);
         }
         
-        const errorMessage = createErrorMessage('Network error. Please try again.');
-        messagesContainer.appendChild(errorMessage);
+        // Check if it's a connection error
+        if (err.message.includes('Failed to fetch') || 
+            err.message.includes('NetworkError') ||
+            err.message.includes('Connection refused') ||
+            err.message.includes('Max retries exceeded')) {
+            const errorMessage = createErrorMessage('Sorry, the service is not available now');
+            messagesContainer.appendChild(errorMessage);
+        } else if (err.message.includes('HTTP error')) {
+            // Handle other HTTP errors
+            const errorMessage = createErrorMessage('Sorry, there was an error. Please try again.');
+            messagesContainer.appendChild(errorMessage);
+        } else {
+            // Handle other errors
+            const errorMessage = createErrorMessage('Sorry, something went wrong. Please try again.');
+            messagesContainer.appendChild(errorMessage);
+        }
         
         // AUTO-SCROLL to show error
         scrollToBottom(true);
