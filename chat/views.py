@@ -21,9 +21,9 @@ def chat(request, chat_id):
     prompt.save()
 
     try:
-        # ✅ CHANGED - Call deployed FastAPI instead of localhost
+
         response = requests.get(
-            f'{FASTAPI_URL}/chat_final',  # ← Now uses deployed URL
+            f'{FASTAPI_URL}',  # ← Now uses deployed URL
             params={"text": user_input},
             timeout=60,  # ← Reduced from 500 for cloud
         )
