@@ -47,6 +47,10 @@ CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE") == "True"
 CSRF_TRUSTED_ORIGINS = [
     'https://neurodialoguebackend-production.up.railway.app',
     'https://*.railway.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://localhost:8001',
+    'http://127.0.0.1:8001',
 ]
 
 # Application definition
