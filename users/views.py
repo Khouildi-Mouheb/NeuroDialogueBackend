@@ -9,7 +9,11 @@ from django.shortcuts import redirect
 from django.contrib import messages
 import logging
 
+
+
 logger = logging.getLogger(__name__)
+
+
 
 
 def home(request):

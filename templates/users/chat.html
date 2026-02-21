@@ -666,9 +666,14 @@ form.addEventListener('submit', async (e) => {
     scrollToBottom(true);
 
     try {
-        const response = await fetch(
-            `/chat/{{ chat.id }}/send/?text=${encodeURIComponent(text)}`
-        );
+        const response = await fetch(`/chat/{{ chat.id }}/send/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({ text: text }),
+        });
 
         // Check if the response is ok
         if (!response.ok) {
@@ -785,6 +790,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Focus textarea
     textarea.focus();
 });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 </script>
 
 <style>
@@ -892,9 +912,7 @@ kbd {
     }
 }
 
-/* ==========================================
-   TRANSITIONS
-   ========================================== */
+
 #desktop-sidebar, 
 #main-chat,
 #mobile-sidebar-content,

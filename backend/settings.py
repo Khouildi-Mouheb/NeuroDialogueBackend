@@ -9,16 +9,7 @@ AUTH_USER_MODEL = os.getenv("AUTH_USER_MODEL")
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
-
-# FastAPI Configuration
-FASTAPI_URL = os.getenv('FASTAPI_URL', 'http://localhost:8000/chat')
-
-# Log the URL on startup (for debugging)
-print(f"🔗 FastAPI URL configured: {FASTAPI_URL}")
 
 
 AUTHENTICATION_BACKENDS=[
@@ -64,6 +55,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'documents',
     
 ]
 

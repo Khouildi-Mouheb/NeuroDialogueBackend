@@ -5,6 +5,7 @@ import requests
 import os
 import logging
 from django.conf import settings
+from users.decorators import superuser_required
 
 FASTAPI_URL = os.getenv('FASTAPI_URL')
 
@@ -22,11 +23,8 @@ def chat(request, chat_id):
     print("DJANGO CHAT VIEW HIT")
     
     chat = get_object_or_404(Chat, id=chat_id)
-    
-    # ✅ FIX 1: Get user input from POST, not GET
     if request.method == 'POST':
         user_input = request.POST.get('text', '') or request.body.decode('utf-8')
-        # If using JSON body:
         import json
         try:
             body = json.loads(request.body)
@@ -34,38 +32,33 @@ def chat(request, chat_id):
         except:
             user_input = request.POST.get('text', '')
     else:
-        # Fallback to GET (if needed for testing)
         user_input = request.GET.get('text', '')
     
     if not user_input:
         return JsonResponse({'error': 'no input provided'}, status=400)
     
-    # Save prompt to DB
     prompt = Prompt(user=request.user, content=user_input, chat=chat)
     prompt.save()
     
     try:
-        # ✅ FIX 2: Use POST request with JSON body
-        response = requests.post(  # ← Changed from GET to POST
-            settings.FASTAPI_URL,  # ← Use settings.FASTAPI_URL
-            json={"text": user_input},  # ← Send as JSON body, not params
-            headers={"Content-Type": "application/json"},  # ← Add header
+
+        response = requests.post(  
+            FASTAPI_URL,  
+            json={"text": user_input},  
+            headers={"Content-Type": "application/json"},  
             timeout=60,
         )
         
         response.raise_for_status()
-        
-        # ✅ FIX 3: Parse response correctly
         data = response.json()
         
-        # FastAPI returns: {"status": "success", "data": "...", "error": null}
+
         model_output = data.get("data", "") or data.get("response", "")
         
         if not model_output:
             logger.error(f"No response from FastAPI: {data}")
             model_output = "I apologize, but I couldn't generate a response."
-        
-        # Save model output to DB
+        print("model_output:", model_output) 
         response_obj = Response(
             prompt=prompt,
             content=model_output,
