@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST
 from users.decorators import superuser_required
 from django.shortcuts import render
 
-
+FASTAPI_URL = os.getenv('FASTAPI_URL')
 
 @superuser_required
 @require_POST
@@ -39,7 +39,7 @@ def upload_document(request):
 
     try:
         fastapi_response = requests.post(
-            f"{settings.FASTAPI_URL}index/",
+            f"{FASTAPI_URL}index/",
             json={"pdf_path": save_path},
             timeout=300, 
         )
