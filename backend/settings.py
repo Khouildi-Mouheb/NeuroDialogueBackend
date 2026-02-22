@@ -99,11 +99,11 @@ DEFAULT_AUTO_FIELD="django.db.models.BigAutoField"
 DATABASES = {
     "default": {
         "ENGINE": os.getenv("DB_ENGINE"),
-        "NAME": os.getenv("DB_NAME_RAILWAY"),
-        "USER": os.getenv("USER_RAILWAY"),
-        "PASSWORD": os.getenv("PASSWORD_RAILWAY"),
-        "HOST": os.getenv("DB_HOST_RAILWAY"), 
-        "PORT": os.getenv("PORT_RAILWAY"),
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST_LOCAL"), 
+        "PORT": os.getenv("DB_PORT"),
     }
 }
 
