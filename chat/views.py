@@ -17,10 +17,10 @@ FASTAPI_URL = os.getenv('FASTAPI_URL')
 logger = logging.getLogger(__name__)
 
 def chat(request, chat_id):
-    """
-    Handle chat message and get AI response
-    """
+
     print("DJANGO CHAT VIEW HIT")
+
+
     
     chat = get_object_or_404(Chat, id=chat_id)
     if request.method == 'POST':
@@ -39,15 +39,30 @@ def chat(request, chat_id):
     
     prompt = Prompt(user=request.user, content=user_input, chat=chat)
     prompt.save()
+
+    recent_messages = Prompt.objects.filter(
+    chat=chat
+    ).order_by('-id')[:10]
+
+    history = [
+    {"role": "user", "content": p.content}
+    for p in reversed(recent_messages)
+    ]
+
     
     try:
 
-        response = requests.post(  
-            FASTAPI_URL,  
-            json={"text": user_input},  
-            headers={"Content-Type": "application/json"},  
+        response = requests.post(
+            FASTAPI_URL,
+            json={
+                "text": user_input,
+                "user_id": str(request.user.id),  
+                "chat_id": str(chat_id),          
+                "history": history           
+            },
+            headers={"Content-Type": "application/json"},
             timeout=60,
-        )
+            )
         
         response.raise_for_status()
         data = response.json()
