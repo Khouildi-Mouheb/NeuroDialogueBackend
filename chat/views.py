@@ -23,6 +23,7 @@ def chat(request, chat_id):
 
     
     chat = get_object_or_404(Chat, id=chat_id)
+    message_count = Prompt.objects.filter(chat=chat).count()
     if request.method == 'POST':
         user_input = request.POST.get('text', '') or request.body.decode('utf-8')
         import json
@@ -40,14 +41,16 @@ def chat(request, chat_id):
     prompt = Prompt(user=request.user, content=user_input, chat=chat)
     prompt.save()
 
-    recent_messages = Prompt.objects.filter(
-    chat=chat
-    ).order_by('-id')[:10]
+    recent_prompts = Prompt.objects.filter(
+        chat=chat
+    ).order_by('-id')[:10].prefetch_related('response')
 
-    history = [
-    {"role": "user", "content": p.content}
-    for p in reversed(recent_messages)
-    ]
+    history = []
+    for prompt in reversed(list(recent_prompts)):
+        history.append({"role": "user", "content": prompt.content})
+        first_response = prompt.response.first()
+        if first_response:
+            history.append({"role": "assistant", "content": first_response.content})
 
     
     try:
@@ -58,7 +61,8 @@ def chat(request, chat_id):
                 "text": user_input,
                 "user_id": str(request.user.id),  
                 "chat_id": str(chat_id),          
-                "history": history           
+                "history": history,
+                "message_count": message_count      
             },
             headers={"Content-Type": "application/json"},
             timeout=60,
