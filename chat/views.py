@@ -65,7 +65,7 @@ def chat(request, chat_id):
                 "message_count": message_count      
             },
             headers={"Content-Type": "application/json"},
-            timeout=60,
+            timeout=600,
             )
         
         response.raise_for_status()
