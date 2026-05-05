@@ -33,6 +33,24 @@
             <form id="upload-form" enctype="multipart/form-data">
                 {% csrf_token %}
 
+                <!-- Collection Selector -->
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                        <i class="fas fa-layer-group mr-1.5 text-indigo-400"></i>
+                        Target Collection
+                    </label>
+                    <div id="collection-selector"
+                         class="w-full flex items-center justify-between px-4 py-3 border border-indigo-200 rounded-xl bg-white cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all duration-200 group"
+                         onclick="openCollectionModal()">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2.5 h-2.5 rounded-full bg-gray-300 group-hover:bg-indigo-400 transition-colors" id="collection-dot"></div>
+                            <span id="collection-display" class="text-gray-400 text-sm">Select a collection...</span>
+                        </div>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs group-hover:text-indigo-500 transition-colors"></i>
+                    </div>
+                    <input type="hidden" name="collection" id="collection-value" required />
+                </div>
+
                 <!-- Dropzone -->
                 <div id="dropzone"
                      class="border-2 border-dashed border-indigo-200 rounded-xl p-10 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all duration-300">
@@ -106,26 +124,193 @@
 
     </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- Collection Picker Modal                                        -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="collection-modal"
+     class="fixed inset-0 z-50 hidden flex items-center justify-center p-4"
+     onclick="handleModalBackdropClick(event)">
+
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+
+    <!-- Panel -->
+    <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-indigo-100 overflow-hidden">
+
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-cyan-50">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center">
+                    <i class="fas fa-layer-group text-white text-sm"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-800 text-sm">Select Collection</h3>
+                    <p class="text-xs text-gray-500">Choose the ChromaDB collection to index into</p>
+                </div>
+            </div>
+            <button onclick="closeCollectionModal()" class="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xs"></i>
+            </button>
+        </div>
+
+        <!-- Search -->
+        <div class="px-4 pt-4 pb-2">
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                <input type="text" id="collection-search" placeholder="Filter collections..."
+                       class="w-full pl-8 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 bg-gray-50"
+                       oninput="filterCollections(this.value)" />
+            </div>
+        </div>
+
+        <!-- Collection List -->
+        <div class="px-4 pb-4 max-h-80 overflow-y-auto space-y-1.5 mt-2" id="collection-list">
+            <!-- Items injected by JS -->
+        </div>
+
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-const fileInput    = document.getElementById('document');
-const dropzone     = document.getElementById('dropzone');
-const dropzoneContent = document.getElementById('dropzone-content');
-const fileSelected = document.getElementById('file-selected');
-const fileName     = document.getElementById('file-name');
-const fileSize     = document.getElementById('file-size');
-const form         = document.getElementById('upload-form');
-const submitBtn    = document.getElementById('submit-btn');
-const submitText   = document.getElementById('submit-text');
-const statusCard   = document.getElementById('status-card');
-const result       = document.getElementById('result');
 
-// ── Dropzone click ────────────────────────────────────────────────
+// ── Collections data ──────────────────────────────────────────────
+const COLLECTIONS = [
+    { value: "greetings_and_bye",           label: "Greetings & Bye",             icon: "fa-hand-wave",        color: "indigo"  },
+    { value: "student_life",                label: "Student Life",                icon: "fa-graduation-cap",   color: "violet"  },
+    { value: "family_and_parenting",        label: "Family & Parenting",          icon: "fa-house-chimney",    color: "pink"    },
+    { value: "work_and_career",             label: "Work & Career",               icon: "fa-briefcase",        color: "blue"    },
+    { value: "personal_growth",             label: "Personal Growth",             icon: "fa-seedling",         color: "green"   },
+    { value: "relationships",               label: "Relationships",               icon: "fa-heart",            color: "rose"    },
+    { value: "academics_and_professional",  label: "Academics & Professional",    icon: "fa-book-open",        color: "sky"     },
+    { value: "health_and_wellbeing",        label: "Health & Wellbeing",          icon: "fa-heart-pulse",      color: "red"     },
+    { value: "financial",                   label: "Financial",                   icon: "fa-coins",            color: "yellow"  },
+    { value: "cultural_and_spiritual",      label: "Cultural & Spiritual",        icon: "fa-om",               color: "amber"   },
+    { value: "social_and_leisure",          label: "Social & Leisure",            icon: "fa-people-group",     color: "teal"    },
+    { value: "social_justice_and_activism", label: "Social Justice & Activism",   icon: "fa-fist-raised",      color: "orange"  },
+    { value: "fun_and_recreation",          label: "Fun & Recreation",            icon: "fa-gamepad",          color: "purple"  },
+    { value: "physical_environment",        label: "Physical Environment",        icon: "fa-tree",             color: "lime"    },
+    { value: "other",                       label: "Other",                       icon: "fa-ellipsis",         color: "gray"    },
+];
+
+const COLOR_MAP = {
+    indigo:  { bg: "bg-indigo-100",  text: "text-indigo-600",  ring: "ring-indigo-300",  dot: "bg-indigo-500"  },
+    violet:  { bg: "bg-violet-100",  text: "text-violet-600",  ring: "ring-violet-300",  dot: "bg-violet-500"  },
+    pink:    { bg: "bg-pink-100",    text: "text-pink-600",    ring: "ring-pink-300",    dot: "bg-pink-500"    },
+    blue:    { bg: "bg-blue-100",    text: "text-blue-600",    ring: "ring-blue-300",    dot: "bg-blue-500"    },
+    green:   { bg: "bg-green-100",   text: "text-green-600",   ring: "ring-green-300",   dot: "bg-green-500"   },
+    rose:    { bg: "bg-rose-100",    text: "text-rose-600",    ring: "ring-rose-300",    dot: "bg-rose-500"    },
+    sky:     { bg: "bg-sky-100",     text: "text-sky-600",     ring: "ring-sky-300",     dot: "bg-sky-500"     },
+    red:     { bg: "bg-red-100",     text: "text-red-600",     ring: "ring-red-300",     dot: "bg-red-500"     },
+    yellow:  { bg: "bg-yellow-100",  text: "text-yellow-600",  ring: "ring-yellow-300",  dot: "bg-yellow-500"  },
+    amber:   { bg: "bg-amber-100",   text: "text-amber-600",   ring: "ring-amber-300",   dot: "bg-amber-500"   },
+    teal:    { bg: "bg-teal-100",    text: "text-teal-600",    ring: "ring-teal-300",    dot: "bg-teal-500"    },
+    orange:  { bg: "bg-orange-100",  text: "text-orange-600",  ring: "ring-orange-300",  dot: "bg-orange-500"  },
+    purple:  { bg: "bg-purple-100",  text: "text-purple-600",  ring: "ring-purple-300",  dot: "bg-purple-500"  },
+    lime:    { bg: "bg-lime-100",    text: "text-lime-600",    ring: "ring-lime-300",    dot: "bg-lime-500"    },
+    gray:    { bg: "bg-gray-100",    text: "text-gray-600",    ring: "ring-gray-300",    dot: "bg-gray-400"    },
+};
+
+let selectedCollection = null;
+
+// ── Render list ───────────────────────────────────────────────────
+function renderCollectionList(filter = '') {
+    const list = document.getElementById('collection-list');
+    const filtered = COLLECTIONS.filter(c =>
+        c.label.toLowerCase().includes(filter.toLowerCase()) ||
+        c.value.toLowerCase().includes(filter.toLowerCase())
+    );
+
+    list.innerHTML = filtered.map(c => {
+        const col = COLOR_MAP[c.color];
+        const isSelected = selectedCollection && selectedCollection.value === c.value;
+        return `
+        <button type="button"
+                onclick="selectCollection('${c.value}')"
+                class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150
+                       ${isSelected
+                           ? `${col.bg} ring-2 ${col.ring}`
+                           : 'hover:bg-gray-50 ring-1 ring-transparent hover:ring-gray-200'
+                       }">
+            <div class="w-8 h-8 rounded-lg ${col.bg} flex items-center justify-center flex-shrink-0">
+                <i class="fas ${c.icon} ${col.text} text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-800 truncate">${c.label}</p>
+                <p class="text-xs text-gray-400 truncate">${c.value}</p>
+            </div>
+            ${isSelected ? `<i class="fas fa-check ${col.text} text-xs flex-shrink-0"></i>` : ''}
+        </button>`;
+    }).join('');
+
+    if (filtered.length === 0) {
+        list.innerHTML = `<p class="text-center text-sm text-gray-400 py-6">No collections match your search.</p>`;
+    }
+}
+
+// ── Select ────────────────────────────────────────────────────────
+function selectCollection(value) {
+    selectedCollection = COLLECTIONS.find(c => c.value === value);
+    const col = COLOR_MAP[selectedCollection.color];
+
+    // Update hidden input
+    document.getElementById('collection-value').value = value;
+
+    // Update selector button
+    document.getElementById('collection-display').textContent = selectedCollection.label;
+    document.getElementById('collection-display').classList.remove('text-gray-400');
+    document.getElementById('collection-display').classList.add('text-gray-800', 'font-medium');
+    document.getElementById('collection-dot').className = `w-2.5 h-2.5 rounded-full ${col.dot} transition-colors`;
+
+    closeCollectionModal();
+}
+
+// ── Filter ────────────────────────────────────────────────────────
+function filterCollections(value) {
+    renderCollectionList(value);
+}
+
+// ── Modal open / close ────────────────────────────────────────────
+function openCollectionModal() {
+    document.getElementById('collection-modal').classList.remove('hidden');
+    document.getElementById('collection-search').value = '';
+    renderCollectionList();
+    setTimeout(() => document.getElementById('collection-search').focus(), 50);
+}
+
+function closeCollectionModal() {
+    document.getElementById('collection-modal').classList.add('hidden');
+}
+
+function handleModalBackdropClick(e) {
+    if (e.target === document.getElementById('collection-modal')) closeCollectionModal();
+}
+
+// Close on Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeCollectionModal();
+});
+
+// Init list
+renderCollectionList();
+
+// ── Dropzone ──────────────────────────────────────────────────────
+const fileInput       = document.getElementById('document');
+const dropzone        = document.getElementById('dropzone');
+const dropzoneContent = document.getElementById('dropzone-content');
+const fileSelected    = document.getElementById('file-selected');
+const fileName        = document.getElementById('file-name');
+const fileSize        = document.getElementById('file-size');
+const form            = document.getElementById('upload-form');
+const submitBtn       = document.getElementById('submit-btn');
+const submitText      = document.getElementById('submit-text');
+const statusCard      = document.getElementById('status-card');
+const result          = document.getElementById('result');
+
 dropzone.addEventListener('click', () => fileInput.click());
 
-// ── File selected ─────────────────────────────────────────────────
 fileInput.addEventListener('change', () => {
     const file = fileInput.files[0];
     if (!file) return;
@@ -135,7 +320,6 @@ fileInput.addEventListener('change', () => {
     fileSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
 });
 
-// ── Drag and drop ─────────────────────────────────────────────────
 dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropzone.classList.add('border-indigo-400', 'bg-indigo-50/30');
@@ -172,18 +356,20 @@ form.addEventListener('submit', async (e) => {
     const file = fileInput.files[0];
     if (!file) return;
 
-    // UI: disable button, show status card
+    if (!document.getElementById('collection-value').value) {
+        openCollectionModal();
+        return;
+    }
+
     submitBtn.disabled = true;
     submitText.textContent = 'Processing...';
     statusCard.classList.remove('hidden');
     result.classList.add('hidden');
 
-    // Step 1 — saving
     stepActive('step-saving');
     const formData = new FormData(form);
 
     try {
-        // Step 2 — sending
         stepDone('step-saving');
         stepActive('step-sending');
 
@@ -193,19 +379,16 @@ form.addEventListener('submit', async (e) => {
             body: formData,
         });
 
-        // Step 3 — embedding (server side, we just animate)
         stepDone('step-sending');
         stepActive('step-embedding');
 
         const data = await response.json();
 
-        // Step 4 — indexing done
         stepDone('step-embedding');
         stepActive('step-indexing');
-        await new Promise(r => setTimeout(r, 400)); // small visual delay
+        await new Promise(r => setTimeout(r, 400));
         stepDone('step-indexing');
 
-        // Show result
         result.classList.remove('hidden');
         if (data.status === 'success') {
             result.className = 'mt-5 p-4 rounded-xl bg-green-50 border border-green-200';
@@ -216,10 +399,9 @@ form.addEventListener('submit', async (e) => {
                     </div>
                     <div>
                         <p class="font-semibold text-green-800">${data.filename} indexed successfully</p>
-                        <p class="text-sm text-green-600">${data.chunks_indexed} chunks stored in ChromaDB</p>
+                        <p class="text-sm text-green-600">${data.chunks_indexed} chunks stored in <strong>${selectedCollection.label}</strong></p>
                     </div>
-                </div>
-            `;
+                </div>`;
             submitText.textContent = 'Index Another Document';
         } else {
             throw new Error(data.error || 'Unknown error');
@@ -237,8 +419,7 @@ form.addEventListener('submit', async (e) => {
                     <p class="font-semibold text-red-800">Indexing failed</p>
                     <p class="text-sm text-red-600">${err.message}</p>
                 </div>
-            </div>
-        `;
+            </div>`;
         submitText.textContent = 'Try Again';
     } finally {
         submitBtn.disabled = false;
