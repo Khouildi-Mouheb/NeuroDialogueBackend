@@ -6,7 +6,7 @@ import os
 import logging
 from django.conf import settings
 from users.decorators import superuser_required
-
+import json
 FASTAPI_URL = os.getenv('FASTAPI_URL')
 
 
@@ -17,16 +17,11 @@ FASTAPI_URL = os.getenv('FASTAPI_URL')
 logger = logging.getLogger(__name__)
 
 def chat(request, chat_id):
-
     print("DJANGO CHAT VIEW HIT")
 
-
-    
     chat = get_object_or_404(Chat, id=chat_id)
-    message_count = Prompt.objects.filter(chat=chat).count()
+
     if request.method == 'POST':
-        user_input = request.POST.get('text', '') or request.body.decode('utf-8')
-        import json
         try:
             body = json.loads(request.body)
             user_input = body.get('text', '')
@@ -34,87 +29,91 @@ def chat(request, chat_id):
             user_input = request.POST.get('text', '')
     else:
         user_input = request.GET.get('text', '')
-    
+
     if not user_input:
         return JsonResponse({'error': 'no input provided'}, status=400)
-    
+
     prompt = Prompt(user=request.user, content=user_input, chat=chat)
     prompt.save()
+
+    message_count = Prompt.objects.filter(chat=chat).count()
 
     recent_prompts = Prompt.objects.filter(
         chat=chat
     ).order_by('-id')[:10].prefetch_related('response')
 
     history = []
-    for prompt in reversed(list(recent_prompts)):
-        history.append({"role": "user", "content": prompt.content})
-        first_response = prompt.response.first()
+    for p in reversed(list(recent_prompts)):
+        history.append({"role": "user", "content": p.content})
+        first_response = p.response.first()
         if first_response:
             history.append({"role": "assistant", "content": first_response.content})
 
-    
     try:
-
         response = requests.post(
             FASTAPI_URL,
             json={
-                "text": user_input,
-                "user_id": str(request.user.id),  
-                "chat_id": str(chat_id),          
-                "history": history,
-                "message_count": message_count      
+                "text":          user_input,
+                "user_id":       str(request.user.id),
+                "chat_id":       str(chat_id),
+                "history":       history,
+                "message_count": message_count,
             },
             headers={"Content-Type": "application/json"},
             timeout=600,
-            )
-        
+        )
+
         response.raise_for_status()
         data = response.json()
-        
 
         model_output = data.get("data", "") or data.get("response", "")
-        
+
         if not model_output:
             logger.error(f"No response from FastAPI: {data}")
             model_output = "I apologize, but I couldn't generate a response."
-        print("model_output:", model_output) 
-        response_obj = Response(
-            prompt=prompt,
-            content=model_output,
-            chat=chat
-        )
+
+        print("model_output:", model_output)
+
+        response_obj = Response(prompt=prompt, content=model_output, chat=chat)
         response_obj.save()
-        
+
+        if message_count == 2:
+            try:
+                title_response = requests.post(
+                    FASTAPI_URL.rstrip('/') + '/generate_title/',
+                    json={"history": history},
+                    headers={"Content-Type": "application/json"},
+                    timeout=30,
+                )
+                if title_response.ok:
+                    generated_title = title_response.json().get("title", "")
+                    if generated_title:
+                        chat.title = generated_title
+                        chat.save(update_fields=["title"])
+            except Exception as e:
+                logger.warning(f"Title generation failed: {e}")
+
         return JsonResponse({
             "response": model_output,
-            "status": data.get("status", "success"),
-            "analysis": data.get("analysis", {})
+            "status":   data.get("status", "success"),
+            "analysis": data.get("analysis", {}),
         })
-        
+
     except requests.Timeout:
         logger.error("FastAPI request timeout")
-        return JsonResponse({
-            'error': 'The AI is thinking too hard. Please try again.'
-        }, status=504)
-    
+        return JsonResponse({'error': 'The AI is thinking too hard. Please try again.'}, status=504)
+
     except requests.ConnectionError:
-        logger.error(f"Cannot connect to FastAPI at {settings.FASTAPI_URL}")
-        return JsonResponse({
-            'error': 'AI service is not available. Make sure FastAPI is running on http://localhost:8000'
-        }, status=503)
-    
+        logger.error(f"Cannot connect to FastAPI at {FASTAPI_URL}")
+        return JsonResponse({'error': 'AI service is not available. Make sure FastAPI is running.'}, status=503)
+
     except requests.RequestException as e:
         logger.error(f"FastAPI request error: {str(e)}")
-        return JsonResponse({
-            'error': f'AI service unavailable: {str(e)}'
-        }, status=503)
-    
+        return JsonResponse({'error': f'AI service unavailable: {str(e)}'}, status=503)
+
     except Exception as e:
         logger.error(f"Unexpected error in chat view: {str(e)}", exc_info=True)
-        return JsonResponse({
-            'error': 'An unexpected error occurred'
-        }, status=500)
-
+        return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
 
 def chat_page(request, chat_id):
     chat = get_object_or_404(Chat, id=chat_id)

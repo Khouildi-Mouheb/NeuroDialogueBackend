@@ -334,17 +334,11 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium text-gray-800 truncate">
-                                    {% with first_message=other_chat.prompt_set.first %}
-                                        {% if first_message %}
-                                            {% if first_message.content|length > 50 %}
-                                                "{{ first_message.content|slice:":50" }}..."
-                                            {% else %}
-                                                "{{ first_message.content }}"
-                                            {% endif %}
-                                        {% else %}
-                                            A reflective moment
-                                        {% endif %}
-                                    {% endwith %}
+                                    {% if other_chat.title and other_chat.title != 'title' %}
+                                        {{ other_chat.title }}
+                                    {% else %}
+                                        A reflective moment
+                                    {% endif %}
                                 </p>
                                 <p class="text-xs text-gray-500 mt-0.5">
                                     {% if other_chat.prompt_set.count == 1 %}
